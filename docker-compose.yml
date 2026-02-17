@@ -1,0 +1,41 @@
+services:
+  meshnet:
+    build:
+      dockerfile: Dockerfile
+      secrets:
+        - build_key
+    container_name: mesh_nord
+    hostname: meshnet
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - dev/net/tun:/dev/net/tun #this will give access to tunneling
+    ports: 
+      - 38080:8080 #this is heimdall port
+      - 30081:81 #This is the page for NPM (nginx proxy manager)
+      - 30080:80 #This will redirect all requests to Heimdall landing page
+    volumes:
+      - /path/meshnet/data:/var/lib/nordvpn #this volume will save the current login from nordvpn
+    restart: unless-stopped
+    
+  nginx-proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: mesh_nginx
+    network_mode: "service:meshnet"
+    volumes:
+      - /path/npm/data:/data
+      #- /path/npm/letsencrypt:/etc/letsencrypt #this can be use to add https to our services
+    restart: unless-stopped
+
+  heimdall:
+    image: linuxserver/heimdall:latest
+    container_name: mesh_heimdall
+    network_mode: "service:meshnet"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - /path/heimdall/config:/config
+    restart: unless-stopped
