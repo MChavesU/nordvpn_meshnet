@@ -2,8 +2,6 @@ services:
   meshnet:
     build:
       dockerfile: Dockerfile
-      secrets:
-        - build_key
     container_name: mesh_nord
     hostname: meshnet
     cap_add:
